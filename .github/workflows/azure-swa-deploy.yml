@@ -10,7 +10,7 @@ on:
       - main
 
 jobs:
-  build:
+  build_and_deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -33,41 +33,22 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: 1
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: nextjs-standalone
-          path: .next/standalone
-          retention-days: 1
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: nextjs-standalone
-          path: .next/standalone
-
       - name: Deploy to Azure Static Web Apps
-        run: |
-          npx --yes @azure/static-web-apps-cli deploy .next/standalone \
-            --deployment-token "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}" \
-            --env production \
-            --verbose
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: .next/standalone
+          skip_app_build: true
+          skip_api_build: true
 
   close_pull_request:
     runs-on: ubuntu-latest
-    needs: build
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     steps:
       - name: Close pull request environment
-        run: |
-          swa deploy \
-            --deployment-token "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}" \
-            --env preview \
-            --action close
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: close
