@@ -23,8 +23,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: /
-          output_location: .next/standalone
-          app_build_command: npm ci && npm run build && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public
+          output_location: .next
 
   close_pull_request:
     runs-on: ubuntu-latest
